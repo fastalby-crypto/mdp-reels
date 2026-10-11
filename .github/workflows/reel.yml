@@ -1,0 +1,52 @@
+name: Reel MDP
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      post_id:
+        description: "ID articolo da rifare (vuoto = controlla i nuovi)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reel-mdp
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Strumenti
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg > /dev/null
+          pip install -q pillow numpy
+
+      - name: Reel pubblicati finora
+        run: |
+          git clone -q --depth 1 -b gh-pages "https://github.com/${GITHUB_REPOSITORY}.git" site || mkdir -p site
+          rm -rf site/.git
+
+      - name: Crea i reel nuovi
+        id: scan
+        run: python3 scan.py site "${{ github.event.inputs.post_id }}"
+
+      - name: Pubblica su GitHub Pages
+        if: steps.scan.outputs.changed == 'true'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd site
+          git init -q
+          git checkout -q -b gh-pages
+          git add -A
+          git -c user.name="mdp-reel-bot" -c user.email="mdp-reel-bot@users.noreply.github.com" commit -qm "reel $(date -u +%F-%H%M)"
+          git push -qf "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
