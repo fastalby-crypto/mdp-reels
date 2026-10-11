@@ -1,0 +1,3 @@
+Metti qui le tracce musicali (mp3, m4a, wav) senza diritti o con licenza d'uso social,
+per esempio dalla YouTube Audio Library o da Pixabay Music.
+Ogni reel ne usa una a rotazione. Se la cartella e' vuota, il reel usa una base generata.
